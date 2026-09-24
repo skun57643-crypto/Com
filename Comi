@@ -1,0 +1,184 @@
+-- ===================================================
+--                    SIM HUB
+-- ===================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "SIM HUB",
+   LoadingTitle = "SIM HUB Loading...",
+   LoadingSubtitle = "by Assistant",
+   ConfigurationSaving = { Enabled = false },
+   Discord = { Enabled = false },
+   KeySystem = false
+})
+
+local MainTab = Window:CreateTab("Main Features", 4483362458)
+local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes")
+
+-- รายชื่อบอสทั้งหมด
+local BossList = {"Coyote", "EvilMom", "Toji", "Decayer"}
+
+-- ตัวแปรสถานะ
+local AutoBuy = false
+local AutoAttackAll = false
+local AutoAttackSingle = false
+local SelectedAttackBoss = "Coyote"
+local AutoEnterAll = false
+local AutoEnterSingle = false
+local SelectedEnterBoss = "Coyote"
+
+-- ===================================================
+-- ระบบ Anti-AFK (ป้องกันการถูกเตะออกเมื่อพับหน้าจอ/ปล่อยจอนิ่ง)
+-- ===================================================
+local VirtualUser = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(0, 0))
+end)
+
+-- ===================================================
+-- ฟังก์ชันที่ 1: ซื้อของ (Buy All Shop)
+-- ===================================================
+MainTab:CreateSection("1. ซื้อของ (Shop System)")
+
+MainTab:CreateToggle({
+   Name = "Auto Buy All Shop (ซื้อของทั้งหมด)",
+   CurrentValue = false,
+   Flag = "AutoBuyToggle",
+   Callback = function(Value)
+      AutoBuy = Value
+      task.spawn(function()
+         while AutoBuy do
+            pcall(function()
+               Remotes:WaitForChild("BuyAllShopRemote"):FireServer()
+            end)
+            task.wait(1)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 2: ตีบอสทั้งหมด (EnterBossArenaRemote All)
+-- ===================================================
+MainTab:CreateSection("2. ตีบอสทั้งหมด (Attack All Bosses)")
+
+MainTab:CreateToggle({
+   Name = "Auto Attack All Bosses (ตีบอสทุกตัววนไป)",
+   CurrentValue = false,
+   Flag = "AutoAttackAllToggle",
+   Callback = function(Value)
+      AutoAttackAll = Value
+      task.spawn(function()
+         while AutoAttackAll do
+            for _, bossName in ipairs(BossList) do
+               if not AutoAttackAll then break end
+               pcall(function()
+                  Remotes:WaitForChild("EnterBossArenaRemote"):FireServer(bossName)
+               end)
+               task.wait(0.5)
+            end
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 3: ตีบอสเฉพาะตัว (EnterBossArenaRemote Single)
+-- ===================================================
+MainTab:CreateSection("3. ตีบอสเฉพาะตัว (Attack Single Boss)")
+
+MainTab:CreateDropdown({
+   Name = "เลือกบอสที่ต้องการตี",
+   Options = BossList,
+   CurrentOption = {"Coyote"},
+   MultipleOptions = false,
+   Flag = "AttackBossDropdown",
+   Callback = function(Option)
+      SelectedAttackBoss = Option[1]
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Attack Selected Boss (ตีบอสที่เลือก)",
+   CurrentValue = false,
+   Flag = "AutoAttackSingleToggle",
+   Callback = function(Value)
+      AutoAttackSingle = Value
+      task.spawn(function()
+         while AutoAttackSingle do
+            pcall(function()
+               Remotes:WaitForChild("EnterBossArenaRemote"):FireServer(SelectedAttackBoss)
+            end)
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 4: เข้าห้องทั้งหมด (WorldBossClickDamageRemote All)
+-- ===================================================
+MainTab:CreateSection("4. เข้าห้องทั้งหมด (Enter All Boss Rooms)")
+
+MainTab:CreateToggle({
+   Name = "Auto Enter All Boss Rooms (เข้าห้องบอสทุกตัวพร้อมกัน)",
+   CurrentValue = false,
+   Flag = "AutoEnterAllToggle",
+   Callback = function(Value)
+      AutoEnterAll = Value
+      task.spawn(function()
+         while AutoEnterAll do
+            for _, bossName in ipairs(BossList) do
+               if not AutoEnterAll then break end
+               pcall(function()
+                  Remotes:WaitForChild("WorldBossClickDamageRemote"):FireServer(bossName)
+               end)
+            end
+            task.wait(0.1)
+         end
+      end)
+   end,
+})
+
+-- ===================================================
+-- ฟังก์ชันที่ 5: เข้าห้องเฉพาะห้อง (WorldBossClickDamageRemote Single)
+-- ===================================================
+MainTab:CreateSection("5. เข้าห้องเฉพาะห้อง (Enter Single Boss Room)")
+
+MainTab:CreateDropdown({
+   Name = "เลือกห้องบอสที่ต้องการเข้า",
+   Options = BossList,
+   CurrentOption = {"Coyote"},
+   MultipleOptions = false,
+   Flag = "EnterBossDropdown",
+   Callback = function(Option)
+      SelectedEnterBoss = Option[1]
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Enter Selected Room (เข้าห้องบอสที่เลือก)",
+   CurrentValue = false,
+   Flag = "AutoEnterSingleToggle",
+   Callback = function(Value)
+      AutoEnterSingle = Value
+      task.spawn(function()
+         while AutoEnterSingle do
+            pcall(function()
+               Remotes:WaitForChild("WorldBossClickDamageRemote"):FireServer(SelectedEnterBoss)
+            end)
+            task.wait(0.1)
+         end
+      end)
+   end,
+})
+
+Rayfield:Notify({
+   Title = "SIM HUB Loaded!",
+   Content = "สคริปต์ SIM HUB พร้อมระบบ Anti-AFK ทำงานแล้ว",
+   Duration = 5,
+   Image = 4483362458,
+})
